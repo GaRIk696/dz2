@@ -1,51 +1,74 @@
+$(function () {
+    let isOperatorLast = false;
+    let isEqualPressed = false;
 
-$(document).ready(function() {
-    let lastWasOperator = false; 
-    let equalPressed = false; 
+    $('.buttons button').on('click', function () {
+        const buttonValue = $(this).data('value');
+        const inputField = $('#input');
+        const currentInput = inputField.val();
 
-    $('.buttons button').on('click', function() {
-        const value = $(this).data('value'); 
-
-        if (value === '=') {
-            const currentInput = $('#input').val(); 
-            const result = calculate(currentInput);
-            addToHistory(currentInput + '='+ result); 
-            $('#input').val(''); 
-            equalPressed = true; 
-        } else {
-            const currentInput = $('#input').val();
-            const lastChar = currentInput.slice(-1);
-
-            
-            if (['+', '-', '*', '/'].includes(value) && ['+', '-', '*', '/'].includes(lastChar)) {
-                return; 
-            }
-
-            if (value === '.') {
-                if (lastWasOperator || currentInput === '') {
-                    return; 
-                }
-                if (currentInput.split(/[\+\-\*\/]/).pop().includes('.')) {
-                    return; 
-                }
-            }
-
-            $('#input').val(currentInput + value); 
-            lastWasOperator = ['+', '-', '*', '/'].includes(value); 
-    
+        if (buttonValue === 'C') {
+            inputField.val('');
+            isOperatorLast = false;
+            isEqualPressed = false;
+            return;
         }
-        
+
+        if (buttonValue === '=') {
+            const result = evaluateExpression(currentInput);
+            if (result !== 'Ошибка') {
+                addToHistory(`${currentInput} = ${result}`);
+                inputField.val(result);
+            } else {
+                inputField.val('Ошибка');
+            }
+            isEqualPressed = true;
+        } else {
+            if (isEqualPressed) {
+                inputField.val('');
+                isEqualPressed = false;
+            }
+
+            if (isOperator(buttonValue) && isOperator(getLastCharacter(currentInput))) {
+                return;
+            }
+
+            if (buttonValue === '.') {
+                if (isOperatorLast || currentInput === '') {
+                    return;
+                }
+                if (hasDecimalInLastNumber(currentInput)) {
+                    return;
+                }
+            }
+
+            inputField.val(currentInput + buttonValue);
+            isOperatorLast = isOperator(buttonValue);
+        }
     });
-    
-    function calculate(expression) {
+
+    function evaluateExpression(expression) {
         try {
-            return math.evaluate(expression); 
+            return math.evaluate(expression);
         } catch (error) {
-            return 'Ошибка'; 
+            return 'Ошибка';
         }
     }
 
     function addToHistory(entry) {
-        $('#history').append('<div>' + entry + '</div>'); }
+        $('#history').append(`<div>${entry}</div>`);
+    }
 
+    function isOperator(value) {
+        return ['+', '-', '*', '/'].includes(value);
+    }
+
+    function getLastCharacter(str) {
+        return str.slice(-1);
+    }
+
+    function hasDecimalInLastNumber(str) {
+        const lastNumber = str.split(/[\+\-\*\/]/).pop();
+        return lastNumber.includes('.');
+    }
 });
